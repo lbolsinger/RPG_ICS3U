@@ -1,0 +1,387 @@
+"""
+RPG Inventory Assignment
+"""
+from random import randint
+
+# Establishing constants, and items that may be randomly selected
+MAX_WEIGHT = 50
+ITEM_WEIGHT = 1
+MAX_LOOT = 5
+ITEMS = ['sword', 'dagger', 'knife', 'gold', 'wheat', 'beer', 'ruby', 'chainmail', 'healing potion', 'cloth', 'arrow', 'silver', 'shield', 'armor', 'bow', 'rodent', 'dictionary']
+ENEMIES = ['goblin', 'faerie', 'dragon', 'troll', 'centaur', 'slime', 'ghost']
+LOCATIONS = ['cave', 'tavern', 'dungeon', 'castle', 'forest']
+WINS = ["stabbing it", 'feeding it', 'paying it', 'protecting yourself']
+COMPATIBLE_WINS = {'sword':'stabbing it', 'dagger':'stabbing it', 'knife':'stabbing it', 'gold':'paying it', 'wheat':'feeding it', 'beer':'feeding it','chainmail':'protecting yourself', 'healing potion':'protecting yourself', 'arrow':'stabbing it', 'silver':'paying it', 'shield':'protecting yourself', 'armor':'protecting yourself', 'bow':'stabbing it',}
+
+def display_inv(inventory: dict):
+  """Print items in inventory."""
+
+  print('Inventory:')
+  total_count = 0
+  for k,v in inventory.items():
+    print('  {} {}'.format(v, k))
+    total_count += v
+  print('  Total weight:', get_weight(inventory))
+
+
+def add_to_inv(inventory: dict, loot: [str]):
+  """Add one of each item found in loot to inventory.
+  If weight of inventory exceeds the max, print items that were not added.
+  
+  >>> bag = {'gold': 100, 'dagger': 10, 'wheat': 70, 'arrow': 17}
+  >>> slime_loot = [ 'gold', 'cloth', 'wheat', 'arrow', 'silver', 'ruby']
+  >>> add_to_inv(bag, slime_loot)
+  You are over encumbered!
+  These items were not added:
+  arrow silver ruby
+  >>> inventory
+  {'gold': 101, 'dagger': 10, 'wheat': 71, 'arrow': 17, 'cloth':1}"""
+
+  not_added = []
+  for item in loot:
+    if get_weight(inventory) + 1 <= MAX_WEIGHT:
+      if item in inventory:
+        inventory[item] += 1
+      else:
+        inventory[item] = 1
+    else:
+      not_added.append(item)
+  if len(not_added) > 0:
+    print("You are over encumbered!\nThese items were not added:")
+    for j in range(len(not_added)):
+      print(not_added[j], end=" ")
+    print()
+
+
+def drop(inventory: dict, item: str, number: int=1):
+  """Subtract number from the count of an item in invetory.
+  If no number is given, subtract 1.
+  
+  bag = {'wheat': 12}
+  >>> drop(bag, 'wheat') 
+  {'wheat': 11}
+  >>> drop(bag, 'wheat', 10)
+  {'wheat': 1}
+  >>> drop(bag, 'wheat', 10)
+  {}"""
+
+  if inventory[item] > number:
+    inventory[item] -= number
+  else:
+    inventory.pop(item)
+
+
+def get_weight(inventory: dict) -> int:
+  """Return the weight of inventory, using a constant for individual item weight.
+  
+  >>> get_weight({'wheat':1, 'sword':3})
+  4"""
+
+  weight = 0
+  for v in inventory.values():
+    weight += v*ITEM_WEIGHT
+  return weight
+
+
+def print_loot(loot: [str]):
+  """Prints items in loot nicely on a line."""
+
+  for item in loot:
+    print(item, end="  ")
+  print()
+
+
+def generate_inventory() -> dict:
+  """Generate a dictionary of inventory items and quanity within the max weight.
+  
+  >>> generate_inventory(ITEMS)
+  {'gold': 100, 'dagger': 10, 'wheat': 70, 'arrow': 17}"""
+
+  inventory = {}
+  num_items = randint(1, MAX_WEIGHT/ITEM_WEIGHT)
+  for i in range(num_items):
+    item = ITEMS[randint(0, len(ITEMS)-1)]
+    if item in inventory:
+      inventory[item] += 1
+    else:
+      inventory[item] = 1
+  return inventory
+
+
+
+def generate_loot() -> [str]:
+  """Generate and return a random list of loot items that a foe has dropped, with a max of
+  10 items.
+  
+  >>> generate_loot()
+  ['sword', 'gold', 'gold', wheat', 'poison']"""
+
+  num_items = randint(1, MAX_LOOT)
+  loot = []
+  for i in range(num_items):
+    x = randint(0, len(ITEMS)-1)
+    loot.append(ITEMS[x])
+  return loot
+
+
+def generate_foe() -> str:
+  """Generate and return a random foe from the constant list of ENEMIES
+  
+  >>> generate_foe()
+  centaur"""
+
+  x = randint(0, len(ENEMIES)-1)
+  return(ENEMIES[x])
+
+
+def defeat_method() -> str:
+  """Generate and return a random defeat method from the constant list of WINS
+  
+  >>> defeat_method()
+  'stabbing it' """
+
+  x = randint(0, len(WINS)-1)
+  return(WINS[x])
+
+
+def random_item(inventory: dict):
+  """Return a random key in inventory.
+  
+  >>> random_item({'gold': 100, 'dagger': 10, 'wheat': 70, 'arrow': 17})
+  wheat"""
+
+  inventory_list = []
+  for k in inventory.keys():
+    inventory_list.append(k)
+  return inventory_list[randint(0, len(inventory_list)-1)]
+
+
+
+def fight(inventory: dict, lives: int) -> int:
+  """Generate a win condition using defeat_method to beat the foe.
+  User selects an item, or item from inventory is randomly generate. 
+  
+  If the item corresponds to the required win condition as set in the
+  constant COMPATIBLE_WINS the player has succeeded. The foe may drop loot that 
+  can be added to inventory.
+  
+  If the item does not correspond to the required win condition, the player is 
+  unsuccessful and subtracts 1 from lives."""
+
+  win_method = defeat_method()
+  print("You can succeed in your fight with the foe by {}".format(win_method))
+  item = input("What item do you choose to use? ")
+  
+  if item not in inventory:
+    print("Item not in inventory. You have one more chance to enter a valid item.")
+    item = input("What item do you choose to use? ")
+
+    if item not in inventory:
+      print("Item will be selected randomly...")
+      item = random_item(inventory)
+  print("Item selected was", item)
+
+  if item in COMPATIBLE_WINS:
+    
+    # COMPATIBLE_WINS has a a key that is an item, which has a value of its associated win condition
+    if COMPATIBLE_WINS[item] == win_method:
+      print("\nYou have succeeded!")
+      
+      # Some win conditions force you to drop the item used
+      if win_method == "feeding it" or win_method == "paying it":
+        print("You have dropped 1 {}".format(item))
+        drop(inventory, item)
+      
+      # After defeating a foe, they drop loot that will be added to inventory
+      loot = generate_loot()
+      print("Your foe has dropped loot:", end=" ")
+      print_loot(loot)
+      add_to_inv(inventory, loot)
+      print()
+      display_inv(inventory)
+    
+    # Item corresponds to a different win condition
+    else:
+      print("\nYou were unsuccessful in this endeavor. You have lost a life.")
+      lives -= 1
+  
+  # Item may be in inventory but doesn't correspond to any wins; they are not in COMPATIBLE_WINS
+  else:
+    print("\nYou were unsuccessful in this endeavor. You have lost a life.")
+    lives -= 1
+
+  print_lives(lives)
+  return lives
+
+def select_location() -> str:
+  """Generate 2 distinct randomly selected locations from LOCATIONS.
+  Return the location that the player selects."""
+
+  location1 = LOCATIONS[randint(0, len(LOCATIONS)-1)]
+  location2 = location1
+  
+  # Ensures that the two locations will not be the same
+  while location2 == location1:
+    location2 = LOCATIONS[randint(0, len(LOCATIONS)-1)]
+  print("\nOh look! A fork in the road!")
+  x = input("Enter 1 to select the {}, enter 2 to select the {}: ".format(location1, location2))
+  if x == "Base Camp":
+    return "Base Camp"
+  elif x == 1:
+    return location1
+  else:
+    return location2
+
+
+def calculate_corpse(inventory: dict, adventures: int) -> int:
+  """Return the total point value of the player after ending the game or dying.
+  
+  Points are calculated by the number of letters in each item in inventory 
+  multiplied by the number of adventures completed.
+  
+  >>> calculate_corpse({'gold': 1, 'dagger': 2, 'wheat': 2}, 3)
+  78"""
+
+  total = 0
+  for k, v in inventory.items():
+    temp = len(k)
+    total += temp*v
+  total *= adventures
+  return total
+
+
+def print_lives(lives: int):
+  """Nicely print the number of lives the player has remaining."""
+
+  print("\nLives: ")
+  for i in range(lives):
+    print("♥", end=" ")
+  print("\n")
+
+
+def store(inventory: dict):
+  """Ask player how many items they will purchase, print their total cost.
+  Player will drop items from inventory until they have completed their payment.
+  Add items that the user wishes to purchase into their inventory.
+  Transactions may be void if the player fails to follow instructions."""
+
+  print("Welcome to the Skeevy Store!")
+  num_purchase = int(input("How many items would you like to purchase? "))
+  total_due = num_purchase*ITEM_WEIGHT
+  
+  print("\nYour cost is ₰{}. Drop 1 gold, 2 silver, 2 ruby, or 3 of any other item for ₰1.".format(total_due)) 
+  print("There are no refunds for returns or incorrect payments.\n")
+  display_inv(inventory)
+  buy = input("\nWould you like to continue your purchase? Enter 'y': ".format(total_due))
+  void = 0
+  
+  if buy == 'y':
+    # Continue asking for payment until the player pays their total due
+    while total_due > 0:
+      print("Your total due is ₰{}.".format(total_due))
+      item = input("\nWhat item will you pay with? ")
+      num_item = int(input("How many will you drop? "))
+
+      # Check if item exists in inventory before comparing quanitity to avoid index error
+      if item not in inventory:
+        print("Item not in inventory. Transaction is void.")
+        total_due = -1
+        void = 1
+
+      else:
+        # Check if the player can drop their required number of items
+        if inventory[item] < num_item:
+          print("Incorrect quanity of {} entered. Transaction void.".format(item))
+          total_due = -1
+          void = 1
+        
+        # Drop item from inventory, change total_due depending on how much was paid
+        # Different items correspond to different amounts
+        else:
+          if item == "gold":
+            total_due -= num_item
+          elif item == "silver" or item == "ruby":
+            total_due -= num_item/2
+          else:
+            total_due -= num_item/3
+          drop(inventory, item, num_item)
+
+     # Player selects items to be added tto inventory
+    if void == 0:
+      print("Payment complete.")
+      new_items = []
+      for i in range(num_purchase):
+        # The user chooses items to be added, but if they are not in COMPATIBLE_WINS or are spelt incorrectly, they cannot be used in a foe encounter
+        new = input("What item would you like to add to inventory? ")
+        new_items.append(new)
+      print("\nItems added to inventory: ", end="")
+      print_loot(new_items)
+      add_to_inv(inventory, new_items)
+
+    # If the user did not follow instructions properly, the payment will be void without refund
+    else:
+      print("\nTransaction is void: no items gained, no items refunded.")
+    display_inv(inventory)
+    print("Continue on your journey.\n")
+    select_location()
+
+
+def base_camp(inventory):
+  """Return 'exit' if the player wishes to end the game, otherwise the player
+  can purchase items with their inventory in the store."""
+
+  print("\nWelcome to Travel Base Camp.")
+  ex = input("\nEnter 'exit' to end game, anything else will bring you to the Skeevy Store: ")
+  if ex != 'exit':
+    store(inventory)
+  else:
+    return "exit"
+
+
+def random_event(inventory: dict):
+  """Generate a random event or encounter to make the game interesting.
+  Items may be dropped or gained from inventory.
+  
+  >>> random_event({'gold': 3, 'dagger': 5})
+  Huzzah! You have found an unoccupied bag!
+  You have added items to inventory: arrow wheat wheat
+  >>> inventory
+  {'gold': 3, 'dagger': 5, 'arrow': 1, 'wheat' : 2}"""
+
+  event = randint(0, 3)
+  if event == 0:
+    # Nothing really happens
+    print("You hear the ominous whispers around the corner, but nothing in sight.")
+    print("You ready your weapons, but continue on apprehensively...")
+
+  elif event == 1:
+    # Items in inventory are stolen
+    print("Oh no! You have encountered a thief!")
+    # They can steal 1 to the number of items held in inventory
+    num_stolen_items = randint(1, get_weight(inventory))
+    stolen = []
+    # When and item is stolen, it is removed from inventory
+    for i in range(num_stolen_items):
+      stolen_item = random_item(inventory)
+      drop(inventory, stolen_item)
+      stolen.append(stolen_item)
+    print("They stole: ", end="")
+    print_loot(stolen)
+    print()
+    display_inv(inventory)
+
+  elif event == 2:
+    # Random items are found and added to inventory
+    print("Huzzah! You have found an unoccupied bag!")
+    loot = generate_loot()
+    add_to_inv(inventory, loot)
+    print("You have added items to inventory: ", end="")
+    print_loot(loot)
+    print()
+    display_inv(inventory)
+
+  else:
+    # Nothing happens
+    print()
+      
+    
